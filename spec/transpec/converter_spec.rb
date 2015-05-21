@@ -63,6 +63,7 @@ module Transpec
             it 'is an example' do
               something.should == 'foo'
               something.should_receive(:message)
+              something.better_receive(:message)
             end
           end
         END
@@ -71,6 +72,7 @@ module Transpec
       it 'dispatches conversion target standalone syntax objects to each handler method' do
         converter.should_receive(:process_should).with(an_instance_of(Syntax::Should))
         converter.should_receive(:process_should_receive).with(an_instance_of(Syntax::ShouldReceive))
+        converter.should_receive(:process_better_receive).with(an_instance_of(Syntax::BetterReceive))
         converter.should_not_receive(:process_stub)
         converter.convert_source(source)
       end
@@ -319,6 +321,108 @@ module Transpec
           context 'and Config#convert_have_items? is false' do
             before { config.conversion[:have_items] = false }
             include_examples 'does nothing'
+          end
+        end
+      end
+    end
+
+    describe '#process_better_receive' do
+      let(:better_receive_object) { double('better_receive_object').as_null_object }
+
+      shared_examples 'does nothing' do
+        it 'does nothing' do
+          better_receive_object.should_not_receive(:expectize!)
+          better_receive_object.should_not_receive(:allowize_any_number_of_times!)
+          better_receive_object.should_not_receive(:stubize_any_number_of_times!)
+          converter.process_better_receive(better_receive_object)
+        end
+      end
+
+      context 'when BetterReceive#useless_expectation? returns true' do
+        before { better_receive_object.stub(:useless_expectation?).and_return(true) }
+
+        context 'and Config#convert_deprecated_method? is true' do
+          before { config.conversion[:deprecated] = true }
+
+          context 'and Config#convert_stub? is true' do
+            before { config.conversion[:stub] = true }
+
+            [true, false].each do |convert_better_receive|
+              context "and Config#convert_better_receive? is #{convert_better_receive}" do
+                before { config.conversion[:should_receive] = convert_better_receive }
+
+                context 'and Config#negative_form_of_to is "not_to"' do
+                  before { config.negative_form_of_to = 'not_to' }
+
+                  it 'invokes BetterReceive#allowize_useless_expectation! with "not_to"' do
+                    better_receive_object.should_receive(:allowize_useless_expectation!).with('not_to')
+                    converter.process_better_receive(better_receive_object)
+                  end
+                end
+
+                context 'and Config#negative_form_of_to is "to_not"' do
+                  before { config.negative_form_of_to = 'to_not' }
+
+                  it 'invokes ShouldReceive#allowize_useless_expectation! with "to_not"' do
+                    better_receive_object.should_receive(:allowize_useless_expectation!).with('to_not')
+                    converter.process_better_receive(better_receive_object)
+                  end
+                end
+              end
+            end
+          end
+
+          context 'and Config#convert_stub? is false' do
+            before { config.conversion[:stub] = false }
+
+            [true, false].each do |convert_better_receive|
+              context "and Config#convert_better_receive? is #{convert_better_receive}" do
+                before { config.conversion[:better_receive] = convert_better_receive }
+
+                it 'invokes ShouldReceive#stubize_useless_expectation!' do
+                  better_receive_object.should_receive(:stubize_useless_expectation!)
+                  converter.process_better_receive(better_receive_object)
+                end
+              end
+            end
+          end
+        end
+
+        context 'and Config#convert_deprecated_method? is false' do
+          before { config.conversion[:deprecated] = false }
+
+          [true, false].each do |convert_stub|
+            context "and Config#convert_stub? is #{convert_stub}" do
+              before { config.conversion[:stub] = convert_stub }
+
+              context 'and Config#convert_better_receive? is true' do
+                before { config.conversion[:better_receive] = true }
+
+                context 'and Config#negative_form_of_to is "not_to"' do
+                  before { config.negative_form_of_to = 'not_to' }
+
+                  it 'invokes BetterReceive#expectize! with "not_to"' do
+                    better_receive_object.should_receive(:expectize!).with('not_to')
+                    converter.process_better_receive(better_receive_object)
+                  end
+                end
+
+                context 'and Config#negative_form_of_to is "to_not"' do
+                  before { config.negative_form_of_to = 'to_not' }
+
+                  it 'invokes BetterReceive#expectize! with "to_not"' do
+                    better_receive_object.should_receive(:expectize!).with('to_not')
+                    converter.process_should_receive(better_receive_object)
+                  end
+                end
+              end
+
+              context 'and Config#convert_better_receive? is false' do
+                before { config.conversion[:better_receive] = false }
+
+                include_examples 'does nothing'
+              end
+            end
           end
         end
       end
