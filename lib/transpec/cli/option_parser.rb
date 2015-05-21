@@ -128,6 +128,7 @@ module Transpec
             '  *should* (to `expect(obj).to`)',
             '  *oneliner* (`it { should ... }` to `it { is_expected.to ... }`)',
             '  *should_receive* (to `expect(obj).to receive`)',
+            '  *better_receive* (to `expect(obj).to receive`)',
             '  *stub*  (to `allow(obj).to receive`)',
             '  *have_items* (to `expect(collection.size).to eq(n)`)',
             "  *its* (to `describe '#attr' { subject { }; it { } }`)",

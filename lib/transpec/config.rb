@@ -18,6 +18,7 @@ module Transpec
               should: true,
             oneliner: true,
       should_receive: true,
+      better_receive: true,
                 stub: true,
           have_items: true,
                  its: true,

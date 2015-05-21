@@ -86,6 +86,22 @@ module Transpec
       end
     end
 
+    def process_better_receive(better_receive)
+      if better_receive.useless_expectation?
+        if config.convert?(:deprecated)
+          if config.convert?(:stub)
+            better_receive.allowize_useless_expectation!(config.negative_form_of_to)
+          else
+            better_receive.stubize_useless_expectation!
+          end
+        elsif config.convert?(:better_receive)
+          better_receive.expectize!(config.negative_form_of_to)
+        end
+      elsif config.convert?(:better_receive)
+        better_receive.expectize!(config.negative_form_of_to)
+      end
+    end
+
     def process_double(double)
       double.convert_to_double! if config.convert?(:deprecated)
     end
